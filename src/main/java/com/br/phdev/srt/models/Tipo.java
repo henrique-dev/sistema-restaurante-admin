@@ -44,7 +44,7 @@ public class Tipo {
         if (obj == null) return false;
         if (!(obj instanceof Tipo)) return false;
         if (obj == this) return true;
-        return this.id == ((Tipo)obj).id;
+        return this.id == ((Tipo)obj).id && this.nome.toLowerCase().equals(((Tipo)obj).getNome().toLowerCase());
     }
     
     

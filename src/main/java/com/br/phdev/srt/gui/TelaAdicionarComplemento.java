@@ -1,29 +1,31 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (C) Paulo Henrique Goncalves Bacelar, Inc - All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ * Written by Paulo Henrique Gonacalves Bacelar <henrique.phgb@gmail.com>, Dezembro 2018
  */
 package com.br.phdev.srt.gui;
 
 import com.br.phdev.srt.dao.DataDAO;
 import com.br.phdev.srt.exception.DAOException;
 import com.br.phdev.srt.http.HttpConnection;
+import com.br.phdev.srt.models.Complemento;
+import com.br.phdev.srt.models.Foto;
 import com.br.phdev.srt.models.Genero;
 import com.br.phdev.srt.utils.Mensagem;
 import com.br.phdev.srt.utils.PegarArquivo;
 import com.br.phdev.srt.utils.Session;
+import com.br.phdev.srt.utils.UrlAttribute;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.awt.event.WindowEvent;
+import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.DefaultComboBoxModel;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
@@ -37,11 +39,11 @@ public class TelaAdicionarComplemento extends javax.swing.JFrame {
     private static TelaAdicionarComplemento instance;
     private final TelaPrincipal.Telas comingFrom;
 
-    private TableModelGenero modeloTabelaGenerosParaAdicionar;
-    private Set<Genero> generosParaSeremAdicionados;
+    private TableModelComplemento modeloTabelaComplementosParaAdicionar;
+    private Set<Complemento> complementosParaSeremAdicionados;
 
-    private TableModelGenero modeloTabelaGenerosExistentes;
-    private Set<Genero> generosExistentes;
+    private TableModelComplemento modeloTabelaComplementosExistentes;
+    private Set<Complemento> complementosExistentes;
 
     public static TelaAdicionarComplemento getInstance() {
         return instance;
@@ -60,16 +62,16 @@ public class TelaAdicionarComplemento extends javax.swing.JFrame {
     public TelaAdicionarComplemento(TelaPrincipal.Telas comingFrom) {
         super("Adicionar complementos");
         initComponents();
-        setAllComponentsEnable(false);
+        this.setAllComponentsEnable(false);
         this.comingFrom = comingFrom;
-        this.generosParaSeremAdicionados = new HashSet<>();
-        this.modeloTabelaGenerosParaAdicionar = new TableModelGenero();
-        this.modeloTabelaGenerosParaAdicionar.setColumnIdentifiers(new String[]{"Nome"});
-        this.tabela_complemento_para_add.setModel(this.modeloTabelaGenerosParaAdicionar);
-        this.generosExistentes = new HashSet<>();
-        this.modeloTabelaGenerosExistentes = new TableModelGenero();
-        this.modeloTabelaGenerosExistentes.setColumnIdentifiers(new String[]{"Nome"});
-        this.tabela_complementos_existentes.setModel(this.modeloTabelaGenerosExistentes);
+        this.complementosParaSeremAdicionados = new HashSet<>();
+        this.modeloTabelaComplementosParaAdicionar = new TableModelComplemento();
+        this.modeloTabelaComplementosParaAdicionar.setColumnIdentifiers(new String[]{"Nome"});
+        this.tabela_complemento_para_add.setModel(this.modeloTabelaComplementosParaAdicionar);
+        this.complementosExistentes = new HashSet<>();
+        this.modeloTabelaComplementosExistentes = new TableModelComplemento();
+        this.modeloTabelaComplementosExistentes.setColumnIdentifiers(new String[]{"Nome"});
+        this.tabela_complementos_existentes.setModel(this.modeloTabelaComplementosExistentes);
         retrieveData();
     }
 
@@ -84,24 +86,24 @@ public class TelaAdicionarComplemento extends javax.swing.JFrame {
 
     private void retrieveDataList() {
         try {
-            HttpURLConnection con = new HttpConnection().getConnection("Gerenciador/ListarGeneros");
+            HttpURLConnection con = new HttpConnection().getConnection("gerenciador/listar-complementos");
             Session.get(con);
             String resposta = new DataDAO(con).retrieveString();
             ObjectMapper mapeador = new ObjectMapper();
-            List<Genero> generos = mapeador.readValue(resposta, new TypeReference<List<Genero>>() {
+            List<Complemento> complementos = mapeador.readValue(resposta, new TypeReference<List<Complemento>>() {
             });
             con.disconnect();
-            modeloTabelaGenerosExistentes.getDataVector().clear();
-            for (Genero genero : generos) {
-                this.generosExistentes.add(genero);
-                modeloTabelaGenerosExistentes.addRow(new Genero[]{genero});
+            modeloTabelaComplementosExistentes.getDataVector().clear();
+            for (Complemento complemento : complementos) {
+                this.complementosExistentes.add(complemento);
+                this.modeloTabelaComplementosExistentes.addRow(new Complemento[]{complemento});
             }
         } catch (DAOException e) {
-            JOptionPane.showMessageDialog(null, "Falha ao obter os dados, certifique-se de que você tem conexão com o sistema");
-            super.dispose();
+            JOptionPane.showMessageDialog(null, "Falha ao obter os dados, certifique-se de que você tem conexão com o sistema", "Erro", JOptionPane.ERROR_MESSAGE);
+            this.dispose();
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Falha ao converter objeto");
-            super.dispose();
+            JOptionPane.showMessageDialog(null, "Falha ao converter objeto", "Erro", JOptionPane.ERROR_MESSAGE);
+            this.dispose();
         }
         setAllComponentsEnable(true);
     }
@@ -114,66 +116,83 @@ public class TelaAdicionarComplemento extends javax.swing.JFrame {
         tabela_complemento_para_add.setEnabled(enable);
     }
 
-    private void adicionarGenero() {
-        String nome = campo_texto_nome_complemento.getText().trim();
-        if (nome.equals("")) {
-            return;
+    private boolean adicionarComplemento() {
+        String nome = this.campo_texto_nome_complemento.getText().trim();
+        String precoString = this.campo_texto_preco.getText().trim();
+        String caminhoArquivo = this.campo_texto_caminho_arquivo.getText().trim();
+        double preco;
+        if (nome.equals("") || precoString.equals("") || caminhoArquivo.equals("")) {
+            JOptionPane.showMessageDialog(null, "Algusn campos estão vazios", "Atenção", JOptionPane.INFORMATION_MESSAGE);
+            return false;
         }
-        for (Genero gen : generosExistentes) {
-            if (nome.toLowerCase().equals(gen.getNome().toLowerCase())) {
-                JOptionPane.showMessageDialog(null, "Genero com este nome já exixte", "Atenção", JOptionPane.INFORMATION_MESSAGE);
-                return;
+        try {
+            preco = Double.parseDouble(precoString);
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "Informe um preço válido", "Erro", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        for (Complemento comp : this.complementosExistentes) {
+            if (nome.toLowerCase().equals(comp.getNome().toLowerCase())) {
+                JOptionPane.showMessageDialog(null, "Complemento com este nome já exixte", "Atenção", JOptionPane.INFORMATION_MESSAGE);
+                return false;
             }
         }
-        Genero genero = new Genero();
-        genero.setId(0);
-        genero.setNome(nome);
-        if (generosParaSeremAdicionados.add(genero)) {
-            modeloTabelaGenerosParaAdicionar.addRow(new String[]{nome});
+        Complemento complemento = new Complemento();
+        complemento.setId(0);
+        complemento.setNome(nome);
+        complemento.setPreco(preco);
+        complemento.setFoto(new Foto(0, new File(caminhoArquivo)));
+        if (this.complementosParaSeremAdicionados.add(complemento)) {            
+            this.modeloTabelaComplementosParaAdicionar.addRow(new Complemento[]{complemento});
         }
+        return true;
     }
 
-    private void salvarGeneros() {
-        if (generosParaSeremAdicionados.isEmpty()) {
+    private void salvarComplementos() {
+        if (complementosParaSeremAdicionados.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Não há nada para salvar", "Atenção", JOptionPane.INFORMATION_MESSAGE);
-        }
-        HttpURLConnection con = new HttpConnection().getConnection("Gerenciador/CadastrarGeneros");
-        Mensagem mensagem = new Mensagem();
-        try {
-            Session.get(con);
-            ObjectMapper mapeador = new ObjectMapper();
-            String json = mapeador.writeValueAsString(this.generosParaSeremAdicionados);
-            DataDAO dataDAO = new DataDAO(con);
-            dataDAO.sendJSON(json);
-            String resposta = dataDAO.retrieveString();
-            mensagem = mapeador.readValue(resposta, new TypeReference<Mensagem>() {});
-            JOptionPane.showMessageDialog(null, mensagem.getDescricao(), "Sucesso", JOptionPane.INFORMATION_MESSAGE);
-        } catch (IOException | DAOException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(null, mensagem.getDescricao(), "Falha", JOptionPane.ERROR_MESSAGE);
-        } finally {
-            con.disconnect();
+            
+        }                
+        for (Complemento complemento : this.complementosParaSeremAdicionados) {
+            HttpURLConnection con = new HttpConnection().getConnection("gerenciador/cadastrar-complemento");
+            Mensagem mensagem = new Mensagem();
+            try {
+                Session.get(con);
+                
+                DataDAO dataDAO = new DataDAO(con);
+                
+                List<UrlAttribute> urlAttributes = new ArrayList<>();
+                urlAttributes.add(new UrlAttribute("nome", complemento.getNome()));
+                urlAttributes.add(new UrlAttribute("preco", String.valueOf(complemento.getPreco())));
+                dataDAO.sendMultiPartFile(complemento.getFoto().getArquivo(), urlAttributes);
+                String resposta = dataDAO.retrieveString();                
+            } catch (DAOException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(null, mensagem.getDescricao(), "Falha", JOptionPane.ERROR_MESSAGE);
+            } finally {
+                con.disconnect();
+            }
         }
     }
 
-    private boolean removerGeneros() {
+    private boolean removerComplementos() {
         if (this.tabela_complementos_existentes.getSelectedRowCount() == 0) {
             return false;
         }
         int opc = JOptionPane.showConfirmDialog(null, "Esses dados serão excluídos do sistema. Continuar?", "Atenção", JOptionPane.YES_NO_OPTION);
         if (opc == JOptionPane.YES_OPTION) {
-            List<Genero> generosParaRemover = new ArrayList<>();
+            List<Complemento> complementosParaRemover = new ArrayList<>();
             int linhasSelecionadas[] = tabela_complementos_existentes.getSelectedRows();
             for (int i = 0; i < linhasSelecionadas.length; i++) {
-                generosParaRemover.add((Genero) modeloTabelaGenerosExistentes.getGeneroAt(linhasSelecionadas[i], 0));
+                complementosParaRemover.add((Complemento) modeloTabelaComplementosExistentes.getObjectAt(linhasSelecionadas[i], 0));
             }
-            if (!generosParaRemover.isEmpty()) {
-                HttpURLConnection conexao = new HttpConnection().getConnection("Gerenciador/RemoverGeneros");
+            if (!complementosParaRemover.isEmpty()) {
+                HttpURLConnection conexao = new HttpConnection().getConnection("gerenciador/remover-complementos");
                 Mensagem mensagem = new Mensagem();
                 try {
                     Session.get(conexao);
                     ObjectMapper mapeador = new ObjectMapper();
-                    String json = mapeador.writeValueAsString(generosParaRemover);
+                    String json = mapeador.writeValueAsString(complementosParaRemover);
                     DataDAO dataDAO = new DataDAO(conexao);
                     dataDAO.sendJSON(json);
                     String resposta = dataDAO.retrieveString();
@@ -201,8 +220,8 @@ public class TelaAdicionarComplemento extends javax.swing.JFrame {
     
 
     private void clearFields() {
-        modeloTabelaGenerosParaAdicionar.getDataVector().clear();
-        generosParaSeremAdicionados.clear();
+        modeloTabelaComplementosParaAdicionar.getDataVector().clear();
+        complementosParaSeremAdicionados.clear();
         tabela_complemento_para_add.updateUI();
         campo_texto_nome_complemento.setText("");
     }
@@ -527,14 +546,14 @@ public class TelaAdicionarComplemento extends javax.swing.JFrame {
     }//GEN-LAST:event_campo_texto_nome_complementoActionPerformed1
 
     private void botao_salvar_e_continuarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_salvar_e_continuarActionPerformed
-        this.salvarGeneros();
+        this.salvarComplementos();
         this.clearFields();
         this.setAllComponentsEnable(false);
         this.retrieveData();
     }//GEN-LAST:event_botao_salvar_e_continuarActionPerformed
 
     private void botao_salvar_e_sairActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_salvar_e_sairActionPerformed
-        this.salvarGeneros();
+        this.salvarComplementos();
         this.dispose();
     }//GEN-LAST:event_botao_salvar_e_sairActionPerformed
 
@@ -551,7 +570,7 @@ public class TelaAdicionarComplemento extends javax.swing.JFrame {
     }//GEN-LAST:event_botao_escolher_imagemActionPerformed
 
     private void botao_remover_complemento_existenteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_remover_complemento_existenteActionPerformed
-        if (this.removerGeneros()) {
+        if (this.removerComplementos()) {
             this.clearFields();
             this.setAllComponentsEnable(false);
             this.retrieveData();
@@ -567,7 +586,11 @@ public class TelaAdicionarComplemento extends javax.swing.JFrame {
     }//GEN-LAST:event_campo_texto_precoActionPerformed1
 
     private void botao_adicionar_complementoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_adicionar_complementoActionPerformed
-        // TODO add your handling code here:
+        if (this.adicionarComplemento()) {
+            this.campo_texto_nome_complemento.setText("");
+            this.campo_texto_preco.setText("");
+            this.campo_texto_caminho_arquivo.setText("");
+        }
     }//GEN-LAST:event_botao_adicionar_complementoActionPerformed
 
     /**
@@ -612,19 +635,22 @@ public class TelaAdicionarComplemento extends javax.swing.JFrame {
         });
     }
 
-    private class TableModelGenero extends DefaultTableModel {
+    private class TableModelComplemento extends DefaultTableModel {
 
-        public TableModelGenero() {
-            super(new String[]{"Nome"}, 0);
+        public TableModelComplemento() {
+            super(new String[]{"Nome", "Preço"}, 0);
         }
 
-        public Genero getGeneroAt(int i, int i1) {
-            return (Genero) super.getValueAt(i, i1);
+        public Complemento getObjectAt(int i, int i1) {
+            return (Complemento) super.getValueAt(i, i1);
         }
 
         @Override
         public Object getValueAt(int i, int i1) {
-            return ((Genero) super.getValueAt(i, i1)).getNome();
+            if (i1 == 0)
+                return ((Complemento) super.getValueAt(i, i1)).getNome();
+            else
+                return ((Complemento) super.getValueAt(i, i1)).getPreco();
         }
 
         @Override

@@ -83,7 +83,7 @@ public class TelaAdicionarTipo extends javax.swing.JFrame {
 
     private void retrieveDataList() {
         try {
-            HttpURLConnection con = new HttpConnection().getConnection("Gerenciador/ListarTipos");
+            HttpURLConnection con = new HttpConnection().getConnection("gerenciador/listar-tipos");
             Session.get(con);
             String resposta = new DataDAO(con).retrieveString();
             ObjectMapper mapeador = new ObjectMapper();
@@ -91,6 +91,7 @@ public class TelaAdicionarTipo extends javax.swing.JFrame {
             });
             con.disconnect();
             modeloTabelaTiposExistentes.getDataVector().clear();
+            tabela_generos_existentes.updateUI();
             for (Tipo tipo : tipos) {
                 this.tiposExistentes.add(tipo);
                 modeloTabelaTiposExistentes.addRow(new Tipo[]{tipo});
@@ -128,7 +129,7 @@ public class TelaAdicionarTipo extends javax.swing.JFrame {
         tipo.setId(0);
         tipo.setNome(nome);
         if (tiposParaSeremAdicionados.add(tipo)) {
-            modeloTabelaTiposParaAdicionar.addRow(new String[]{nome});
+            modeloTabelaTiposParaAdicionar.addRow(new Tipo[]{tipo});
         }
     }
 
@@ -136,7 +137,7 @@ public class TelaAdicionarTipo extends javax.swing.JFrame {
         if (tiposParaSeremAdicionados.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Não há nada para salvar", "Atenção", JOptionPane.INFORMATION_MESSAGE);
         }
-        HttpURLConnection con = new HttpConnection().getConnection("Gerenciador/CadastrarTipos");
+        HttpURLConnection con = new HttpConnection().getConnection("gerenciador/cadastrar-tipos");
         Mensagem mensagem = new Mensagem();
         try {
             Session.get(con);
@@ -167,7 +168,7 @@ public class TelaAdicionarTipo extends javax.swing.JFrame {
                 tiposParaRemover.add((Tipo) modeloTabelaTiposExistentes.getTipo(linhasSelecionadas[i], 0));
             }
             if (!tiposParaRemover.isEmpty()) {
-                HttpURLConnection conexao = new HttpConnection().getConnection("Gerenciador/RemoverTipos");
+                HttpURLConnection conexao = new HttpConnection().getConnection("gerenciador/remover-tipos");
                 Mensagem mensagem = new Mensagem();
                 try {
                     Session.get(conexao);
@@ -427,9 +428,8 @@ public class TelaAdicionarTipo extends javax.swing.JFrame {
                         .addComponent(botao_salvar_e_continuar, javax.swing.GroupLayout.PREFERRED_SIZE, 239, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
                         .addComponent(botao_salvar_e_sair, javax.swing.GroupLayout.PREFERRED_SIZE, 239, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(botao_sair, javax.swing.GroupLayout.PREFERRED_SIZE, 239, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 91, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(botao_sair, javax.swing.GroupLayout.PREFERRED_SIZE, 239, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)

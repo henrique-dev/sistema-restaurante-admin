@@ -59,16 +59,16 @@ public class DataDAO {
             }
         }
         return bytes;
-    }    
+    }
     
-    public void sendMultiPartFile(File file, List<UrlAttribute> urlAttributeList) throws DAOException {
+    public void sendMultiPartFile(File arquivo, List<UrlAttribute> urlAttributeList) throws DAOException {
         String boundary = "SwA " + Long.toString(System.currentTimeMillis()) + " SwA";
         String delimiter = "--";
         OutputStream os = null;        
         String paramName = "param1";
         String value = "value1";
         try {
-            byte[] bytes = getBytesFromFile(file);
+            byte[] bytes = getBytesFromFile(arquivo);
 
             this.connection.setDoOutput(true);
             this.connection.setDoInput(true);           
@@ -84,7 +84,7 @@ public class DataDAO {
 
             os.write((delimiter + boundary + "\r\n").getBytes());
             //os.write(("Content-Disposition: form-data; name=\"" + paramName + "\"; filename=\"" + fileName + "\"\r\n").getBytes());
-            os.write(("Content-Disposition: form-data; name=\"file\"; filename=\"" + file.getName() + "\"\r\n").getBytes());
+            os.write(("Content-Disposition: form-data; name=\"arquivo\"; filename=\"" + arquivo.getName() + "\"\r\n").getBytes());
             os.write(("Content-Type: application/octet-stream\r\n").getBytes());
             os.write(("Content-Transfer-Encoding: binary\r\n").getBytes());
 

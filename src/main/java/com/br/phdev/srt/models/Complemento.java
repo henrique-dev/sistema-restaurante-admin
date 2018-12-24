@@ -64,7 +64,7 @@ public class Complemento {
         if (obj == null) return false;
         if (!(obj instanceof Complemento)) return false;
         if (obj == this) return true;
-        return this.id == ((Complemento)obj).id;
+        return this.id == ((Complemento)obj).id && this.nome.toLowerCase().equals(((Complemento)obj).getNome().toLowerCase());
     }
     
     

@@ -82,17 +82,18 @@ public class TelaAdicionarGenero extends javax.swing.JFrame {
 
     private void retrieveDataList() {
         try {
-            HttpURLConnection con = new HttpConnection().getConnection("Gerenciador/ListarGeneros");
+            HttpURLConnection con = new HttpConnection().getConnection("gerenciador/listar-generos");
             Session.get(con);
             String resposta = new DataDAO(con).retrieveString();
             ObjectMapper mapeador = new ObjectMapper();
             List<Genero> generos = mapeador.readValue(resposta, new TypeReference<List<Genero>>() {
             });
-            con.disconnect();
-            modeloTabelaGenerosExistentes.getDataVector().clear();
+            con.disconnect();            
+            this.modeloTabelaGenerosExistentes.getDataVector().clear();
+            this.tabela_generos_existentes.updateUI();
             for (Genero genero : generos) {
                 this.generosExistentes.add(genero);
-                modeloTabelaGenerosExistentes.addRow(new Genero[]{genero});
+                this.modeloTabelaGenerosExistentes.addRow(new Genero[]{genero});
             }
         } catch (DAOException e) {
             JOptionPane.showMessageDialog(null, "Falha ao obter os dados, certifique-se de que você tem conexão com o sistema");
@@ -126,8 +127,8 @@ public class TelaAdicionarGenero extends javax.swing.JFrame {
         Genero genero = new Genero();
         genero.setId(0);
         genero.setNome(nome);
-        if (generosParaSeremAdicionados.add(genero)) {
-            modeloTabelaGenerosParaAdicionar.addRow(new String[]{nome});
+        if (generosParaSeremAdicionados.add(genero)) {            
+            modeloTabelaGenerosParaAdicionar.addRow(new Genero[]{genero});
         }
     }
 
@@ -135,7 +136,7 @@ public class TelaAdicionarGenero extends javax.swing.JFrame {
         if (generosParaSeremAdicionados.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Não há nada para salvar", "Atenção", JOptionPane.INFORMATION_MESSAGE);
         }
-        HttpURLConnection con = new HttpConnection().getConnection("Gerenciador/CadastrarGeneros");
+        HttpURLConnection con = new HttpConnection().getConnection("gerenciador/cadastrar-generos");
         Mensagem mensagem = new Mensagem();
         try {
             Session.get(con);
@@ -166,7 +167,7 @@ public class TelaAdicionarGenero extends javax.swing.JFrame {
                 generosParaRemover.add((Genero) modeloTabelaGenerosExistentes.getGeneroAt(linhasSelecionadas[i], 0));
             }
             if (!generosParaRemover.isEmpty()) {
-                HttpURLConnection conexao = new HttpConnection().getConnection("Gerenciador/RemoverGeneros");
+                HttpURLConnection conexao = new HttpConnection().getConnection("gerenciador/remover-generos");
                 Mensagem mensagem = new Mensagem();
                 try {
                     Session.get(conexao);
@@ -502,7 +503,7 @@ public class TelaAdicionarGenero extends javax.swing.JFrame {
         if (this.removerGeneros()) {
             this.clearFields();
             this.setAllComponentsEnable(false);
-            this.retrieveData();
+            this.retrieveData();            
         }
     }//GEN-LAST:event_botao_remover_genero_existsnteActionPerformed
 

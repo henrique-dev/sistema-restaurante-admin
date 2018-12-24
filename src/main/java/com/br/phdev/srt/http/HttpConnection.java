@@ -18,7 +18,7 @@ public class HttpConnection {
     
     public static final int SC_LOGIN_ERROR = 1000;
     
-    private final String urlContext = "http://localhost:8084/SistemaRestaurante/";
+    private final String urlContext = "http://localhost:8084/sr/";
     
     public HttpURLConnection getConnection(String urlController) {
         try {
