@@ -52,5 +52,10 @@ public class Tipo {
     public int hashCode() {
         return (int)this.id;
     }
+
+    @Override
+    public String toString() {
+        return this.nome;
+    }        
     
 }

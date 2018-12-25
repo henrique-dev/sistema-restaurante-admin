@@ -30,36 +30,21 @@ import javax.swing.table.DefaultTableModel;
  *
  * @author Paulo Henrique Gonçalves Bacelar
  */
-public class TelaAdicionarGenero extends javax.swing.JFrame {
-
-    private static TelaAdicionarGenero instance;
-    private final TelaPrincipal.Telas comingFrom;
+public class TelaAdicionarGenero extends javax.swing.JFrame {    
 
     private TableModelGenero modeloTabelaGenerosParaAdicionar;
     private Set<Genero> generosParaSeremAdicionados;
 
     private TableModelGenero modeloTabelaGenerosExistentes;
-    private Set<Genero> generosExistentes;
-
-    public static TelaAdicionarGenero getInstance() {
-        return instance;
-    }
-
-    public static TelaAdicionarGenero inflate(TelaPrincipal.Telas comingFrom) {
-        if (instance == null) {
-            instance = new TelaAdicionarGenero(comingFrom);
-        }
-        return instance;
-    }
+    private Set<Genero> generosExistentes;    
 
     /**
      * Creates new form FrameAddSpeciality
      */
-    public TelaAdicionarGenero(TelaPrincipal.Telas comingFrom) {
+    public TelaAdicionarGenero() {
         super("Adicionar gêneros");
         initComponents();
-        setAllComponentsEnable(false);
-        this.comingFrom = comingFrom;
+        setAllComponentsEnable(false);        
         this.generosParaSeremAdicionados = new HashSet<>();
         this.modeloTabelaGenerosParaAdicionar = new TableModelGenero();
         this.modeloTabelaGenerosParaAdicionar.setColumnIdentifiers(new String[]{"Nome"});
@@ -208,36 +193,12 @@ public class TelaAdicionarGenero extends javax.swing.JFrame {
 
     @Override
     protected void processWindowEvent(final WindowEvent e) {
-        super.processWindowEvent(e);
-        if (e.getID() == WindowEvent.WINDOW_CLOSING) {
-            instance = null;
-        }
+        super.processWindowEvent(e);        
     }
 
     @Override
-    public void dispose() {        
-        switch (comingFrom) {
-            case ADICIONAR_ITEM:
-                TelaAdicionarItem telaAdicionarItem = TelaAdicionarItem.getInstance();
-                if (telaAdicionarItem != null) {
-                    telaAdicionarItem.setAllComponentsEnable(false);
-                    telaAdicionarItem.retrieveData();
-                }
-                break;
-            case PRINCIPAL:
-                TelaPrincipal telaPrincipal = TelaPrincipal.getInstancia();
-                if (telaPrincipal != null) {
-                    telaPrincipal.setVisible(true);
-                    System.out.println("HERE");
-                }
-                break;
-        }        
-        super.dispose();
-        instance = null;
-    }
-
-    public TelaPrincipal.Telas getComingFrom() {
-        return comingFrom;
+    public void dispose() {                
+        super.dispose();        
     }
 
     /**
@@ -540,7 +501,7 @@ public class TelaAdicionarGenero extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new TelaAdicionarGenero(null).setVisible(true);
+                new TelaAdicionarGenero().setVisible(true);
             }
         });
     }

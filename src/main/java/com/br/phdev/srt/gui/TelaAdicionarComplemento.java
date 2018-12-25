@@ -34,36 +34,21 @@ import javax.swing.table.DefaultTableModel;
  *
  * @author Paulo Henrique Gonçalves Bacelar
  */
-public class TelaAdicionarComplemento extends javax.swing.JFrame {
-
-    private static TelaAdicionarComplemento instance;
-    private final TelaPrincipal.Telas comingFrom;
+public class TelaAdicionarComplemento extends javax.swing.JFrame {        
 
     private TableModelComplemento modeloTabelaComplementosParaAdicionar;
     private Set<Complemento> complementosParaSeremAdicionados;
 
     private TableModelComplemento modeloTabelaComplementosExistentes;
-    private Set<Complemento> complementosExistentes;
-
-    public static TelaAdicionarComplemento getInstance() {
-        return instance;
-    }
-
-    public static TelaAdicionarComplemento inflate(TelaPrincipal.Telas comingFrom) {
-        if (instance == null) {
-            instance = new TelaAdicionarComplemento(comingFrom);
-        }
-        return instance;
-    }
+    private Set<Complemento> complementosExistentes;    
 
     /**
      * Creates new form FrameAddSpeciality
      */
-    public TelaAdicionarComplemento(TelaPrincipal.Telas comingFrom) {
+    public TelaAdicionarComplemento() {
         super("Adicionar complementos");
         initComponents();
-        this.setAllComponentsEnable(false);
-        this.comingFrom = comingFrom;
+        this.setAllComponentsEnable(false);        
         this.complementosParaSeremAdicionados = new HashSet<>();
         this.modeloTabelaComplementosParaAdicionar = new TableModelComplemento();
         this.modeloTabelaComplementosParaAdicionar.setColumnIdentifiers(new String[]{"Nome"});
@@ -230,35 +215,14 @@ public class TelaAdicionarComplemento extends javax.swing.JFrame {
     protected void processWindowEvent(final WindowEvent e) {
         super.processWindowEvent(e);
         if (e.getID() == WindowEvent.WINDOW_CLOSING) {
-            instance = null;
+            
         }
     }
 
     @Override
-    public void dispose() {        
-        switch (comingFrom) {
-            case ADICIONAR_ITEM:
-                TelaAdicionarItem telaAdicionarItem = TelaAdicionarItem.getInstance();
-                if (telaAdicionarItem != null) {
-                    telaAdicionarItem.setAllComponentsEnable(false);
-                    telaAdicionarItem.retrieveData();
-                }
-                break;
-            case PRINCIPAL:
-                TelaPrincipal telaPrincipal = TelaPrincipal.getInstancia();
-                if (telaPrincipal != null) {
-                    telaPrincipal.setVisible(true);
-                    System.out.println("HERE");
-                }
-                break;
-        }        
-        super.dispose();
-        instance = null;
-    }
-
-    public TelaPrincipal.Telas getComingFrom() {
-        return comingFrom;
-    }
+    public void dispose() {                
+        super.dispose();        
+    }    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -630,7 +594,7 @@ public class TelaAdicionarComplemento extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new TelaAdicionarComplemento(null).setVisible(true);
+                new TelaAdicionarComplemento().setVisible(true);
             }
         });
     }

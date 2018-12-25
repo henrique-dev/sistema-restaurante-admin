@@ -157,7 +157,8 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        TelaAdicionarItem telaAdicionarItem = TelaAdicionarItem.inflate(Telas.PRINCIPAL, TelaAdicionarItem.Mode.ADICIONAR_ITEM);
+        //TelaAdicionarItem telaAdicionarItem = TelaAdicionarItem.inflate(Telas.PRINCIPAL, TelaAdicionarItem.Mode.ADICIONAR_ITEM);
+        TelaAdicionarItem telaAdicionarItem = new TelaAdicionarItem();
         telaAdicionarItem.setVisible(true);        
     }//GEN-LAST:event_jButton2ActionPerformed
 
@@ -167,8 +168,7 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
-        TelaAdicionarGenero telaAdicionarGenero = TelaAdicionarGenero.inflate(Telas.PRINCIPAL);
-        telaAdicionarGenero.setVisible(true);
+        
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
@@ -176,13 +176,11 @@ public class TelaPrincipal extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton5ActionPerformed
 
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
-        TelaAdicionarComplemento telaAdicionarComplemento = TelaAdicionarComplemento.inflate(Telas.PRINCIPAL);
-        telaAdicionarComplemento.setVisible(true);
+        
     }//GEN-LAST:event_jButton6ActionPerformed
 
     private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
-        TelaAdicionarTipo telaAdicionarTipo = TelaAdicionarTipo.inflate(Telas.PRINCIPAL);
-        telaAdicionarTipo.setVisible(true);        
+        
     }//GEN-LAST:event_jButton8ActionPerformed
 
     /**

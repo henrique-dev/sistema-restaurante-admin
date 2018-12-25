@@ -33,34 +33,19 @@ import javax.swing.table.DefaultTableModel;
  */
 public class TelaAdicionarTipo extends javax.swing.JFrame {
 
-    private static TelaAdicionarTipo instance;
-    private final TelaPrincipal.Telas comingFrom;
-
     private TableModelGenero modeloTabelaTiposParaAdicionar;
     private Set<Tipo> tiposParaSeremAdicionados;
 
     private TableModelGenero modeloTabelaTiposExistentes;
-    private Set<Tipo> tiposExistentes;
-
-    public static TelaAdicionarTipo getInstance() {
-        return instance;
-    }
-
-    public static TelaAdicionarTipo inflate(TelaPrincipal.Telas comingFrom) {
-        if (instance == null) {
-            instance = new TelaAdicionarTipo(comingFrom);
-        }
-        return instance;
-    }
+    private Set<Tipo> tiposExistentes;    
 
     /**
      * Creates new form FrameAddSpeciality
      */
-    public TelaAdicionarTipo(TelaPrincipal.Telas comingFrom) {
+    public TelaAdicionarTipo() {
         super("Adicionar tipos");
         initComponents();
-        setAllComponentsEnable(false);
-        this.comingFrom = comingFrom;
+        setAllComponentsEnable(false);        
         this.tiposParaSeremAdicionados = new HashSet<>();
         this.modeloTabelaTiposParaAdicionar = new TableModelGenero();
         this.modeloTabelaTiposParaAdicionar.setColumnIdentifiers(new String[]{"Nome"});
@@ -209,34 +194,12 @@ public class TelaAdicionarTipo extends javax.swing.JFrame {
 
     @Override
     protected void processWindowEvent(final WindowEvent e) {
-        super.processWindowEvent(e);
-        if (e.getID() == WindowEvent.WINDOW_CLOSING) {
-            instance = null;
-        }
+        super.processWindowEvent(e);        
     }
 
     @Override
-    public void dispose() {        
-        switch (comingFrom) {
-            case ADICIONAR_ITEM:
-                TelaAdicionarItem telaAdicionarItem = TelaAdicionarItem.getInstance();
-                if (telaAdicionarItem != null) {
-                    telaAdicionarItem.setAllComponentsEnable(false);
-                    telaAdicionarItem.retrieveData();
-                }
-                break;
-            case PRINCIPAL:
-                TelaPrincipal telaPrincipal = TelaPrincipal.getInstancia();
-                if (telaPrincipal != null)
-                    telaPrincipal.setVisible(true);
-                break;
-        }
-        super.dispose();
-        instance = null;
-    }
-
-    public TelaPrincipal.Telas getComingFrom() {
-        return comingFrom;
+    public void dispose() {                
+        super.dispose();        
     }
 
     /**
@@ -543,7 +506,7 @@ public class TelaAdicionarTipo extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new TelaAdicionarTipo(null).setVisible(true);
+                new TelaAdicionarTipo().setVisible(true);
             }
         });
     }
