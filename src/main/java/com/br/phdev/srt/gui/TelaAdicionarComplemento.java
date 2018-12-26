@@ -34,7 +34,9 @@ import javax.swing.table.DefaultTableModel;
  *
  * @author Paulo Henrique Gonçalves Bacelar
  */
-public class TelaAdicionarComplemento extends javax.swing.JFrame {        
+public class TelaAdicionarComplemento extends javax.swing.JFrame {     
+    
+    private TelaAdicionarItem telaAdicionarItem;
 
     private TableModelComplemento modeloTabelaComplementosParaAdicionar;
     private Set<Complemento> complementosParaSeremAdicionados;
@@ -45,8 +47,9 @@ public class TelaAdicionarComplemento extends javax.swing.JFrame {
     /**
      * Creates new form FrameAddSpeciality
      */
-    public TelaAdicionarComplemento() {
+    public TelaAdicionarComplemento(TelaAdicionarItem telaAdicionarItem) {
         super("Adicionar complementos");
+        this.telaAdicionarItem = telaAdicionarItem;
         initComponents();
         this.setAllComponentsEnable(false);        
         this.complementosParaSeremAdicionados = new HashSet<>();
@@ -220,7 +223,9 @@ public class TelaAdicionarComplemento extends javax.swing.JFrame {
     }
 
     @Override
-    public void dispose() {                
+    public void dispose() {    
+        this.telaAdicionarItem.retrieveData(TelaAdicionarItem.CarregarDados.COMPLEMENTO);
+        this.telaAdicionarItem.setVisible(true);
         super.dispose();        
     }    
 
@@ -377,7 +382,7 @@ public class TelaAdicionarComplemento extends javax.swing.JFrame {
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel4Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -442,7 +447,7 @@ public class TelaAdicionarComplemento extends javax.swing.JFrame {
             jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel5Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 444, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 232, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(botao_remover_complemento_existente)
                 .addContainerGap())
@@ -594,7 +599,7 @@ public class TelaAdicionarComplemento extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new TelaAdicionarComplemento().setVisible(true);
+                new TelaAdicionarComplemento(null).setVisible(true);
             }
         });
     }

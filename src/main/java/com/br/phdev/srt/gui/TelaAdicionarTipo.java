@@ -32,18 +32,18 @@ import javax.swing.table.DefaultTableModel;
  * @author Paulo Henrique Gonçalves Bacelar
  */
 public class TelaAdicionarTipo extends javax.swing.JFrame {
+    
+    private TelaAdicionarItem telaAdicionarItem;
 
     private TableModelGenero modeloTabelaTiposParaAdicionar;
     private Set<Tipo> tiposParaSeremAdicionados;
 
     private TableModelGenero modeloTabelaTiposExistentes;
     private Set<Tipo> tiposExistentes;    
-
-    /**
-     * Creates new form FrameAddSpeciality
-     */
-    public TelaAdicionarTipo() {
+    
+    public TelaAdicionarTipo(TelaAdicionarItem telaAdicionarItem) {
         super("Adicionar tipos");
+        this.telaAdicionarItem = telaAdicionarItem;
         initComponents();
         setAllComponentsEnable(false);        
         this.tiposParaSeremAdicionados = new HashSet<>();
@@ -193,12 +193,14 @@ public class TelaAdicionarTipo extends javax.swing.JFrame {
     }
 
     @Override
-    protected void processWindowEvent(final WindowEvent e) {
+    protected void processWindowEvent(final WindowEvent e) {        
         super.processWindowEvent(e);        
     }
 
     @Override
-    public void dispose() {                
+    public void dispose() {
+        this.telaAdicionarItem.retrieveData(TelaAdicionarItem.CarregarDados.TIPO);
+        this.telaAdicionarItem.setVisible(true);
         super.dispose();        
     }
 
@@ -506,7 +508,7 @@ public class TelaAdicionarTipo extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new TelaAdicionarTipo().setVisible(true);
+                new TelaAdicionarTipo(null).setVisible(true);
             }
         });
     }

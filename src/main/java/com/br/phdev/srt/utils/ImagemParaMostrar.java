@@ -17,6 +17,9 @@ public class ImagemParaMostrar {
     private ImageIcon icon;
     private String caminho;
 
+    public ImagemParaMostrar() {
+    }        
+
     public ImagemParaMostrar(ImageIcon icon, String caminho) {
         this.icon = icon;
         this.caminho = caminho;

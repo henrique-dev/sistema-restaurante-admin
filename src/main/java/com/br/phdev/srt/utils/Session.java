@@ -7,6 +7,7 @@ package com.br.phdev.srt.utils;
 
 import java.net.HttpCookie;
 import java.net.HttpURLConnection;
+import java.net.ProtocolException;
 import java.util.List;
 import java.util.Map;
 
@@ -28,8 +29,9 @@ public class Session {
 
     private Session() {}
 
-    public static void newSession(HttpURLConnection con) {
-        con.addRequestProperty("Cookie", "JSESSIONID=value");
+    public static void newSession(HttpURLConnection con) throws ProtocolException {
+        con.setRequestMethod("POST");        
+        //con.addRequestProperty("Cookie", "JSESSIONID=value");
     }
 
     public static void validate(HttpURLConnection con) {

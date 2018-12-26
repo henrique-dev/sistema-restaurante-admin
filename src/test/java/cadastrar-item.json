@@ -1,0 +1,53 @@
+{
+    "id": 0,
+    "nome": "Vatapá regional",
+    "descricao": "O melhor vatapá da região norte",
+    "preco": 9.8,
+    "genero": {
+        "id": 1,
+        "nome": "Molhados"
+    },
+    "tipos": [{
+            "id": 1,
+            "nome": "Comidasa típicas"
+        }, {
+            "id": 4,
+            "nome": "Regional"
+        }],
+    "modificavel": true,
+    "complementos": [{
+            "id": 1,
+            "nome": "Pimenta",
+            "preco": 1.25,
+            "foto": {
+                "id": 1,
+                "arquivo": null
+            }
+        }, {
+            "id": 2,
+            "nome": "Tomate",
+            "preco": 2.3,
+            "foto": {
+                "id": 2,
+                "arquivo": null
+            }
+        }, {
+            "id": 3,
+            "nome": "Salsa",
+            "preco": 5.0,
+            "foto": {
+                "id": 3,
+                "arquivo": null
+            }
+        }],
+    "fotos": [{
+            "id": 8,
+            "arquivo": null
+        }, {
+            "id": 9,
+            "arquivo": null
+        }, {
+            "id": 10,
+            "arquivo": null
+        }]
+}

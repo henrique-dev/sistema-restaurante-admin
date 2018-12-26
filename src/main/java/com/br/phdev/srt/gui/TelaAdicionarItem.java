@@ -20,7 +20,9 @@ import com.br.phdev.srt.utils.PegarArquivo;
 import com.br.phdev.srt.utils.Session;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.awt.Dimension;
 import java.awt.Image;
+import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -28,13 +30,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Vector;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 
 /**
@@ -42,6 +43,10 @@ import javax.swing.table.DefaultTableModel;
  * @author Paulo Henrique Gonçalves Bacelar <henrique.phgb@gmail.com>
  */
 public class TelaAdicionarItem extends javax.swing.JFrame {
+
+    enum CarregarDados {
+        TUDO, TIPO, GENERO, COMPLEMENTO, ITEM
+    };
 
     private TableModelComplemento modeloTabelaComplementosExistentes;
 
@@ -64,8 +69,21 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
     private ImagemParaMostrar imagemTipo4;
     private ImagemParaMostrar imagemTipo5;
 
+    private PegarArquivo pegarArquivo;
+
     public TelaAdicionarItem() {
         initComponents();
+        Dimension tamanhoTela = Toolkit.getDefaultToolkit().getScreenSize();
+        double largura = tamanhoTela.width;
+        double altura = tamanhoTela.height;
+        System.out.println("Largura: " + largura);
+        System.out.println("Altura: " + altura);
+
+        this.setSize(tamanhoTela);
+        this.painel_rolante_principal.setSize(500, (int)altura);
+        this.painel_divisor_principal.setSize(tamanhoTela);
+        this.painel_divisor_principal.setDividerLocation(0.2);
+        this.painel_divisor_secundario.setDividerLocation(0.7);
 
         this.modeloTabelaComplementosExistentes = new TableModelComplemento();
         this.tabela_complementos_existentes.setModel(this.modeloTabelaComplementosExistentes);
@@ -87,24 +105,40 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
 
         this.generosExistentes = new HashSet<>();
 
-        retrieveData();
+        setEdicaoItem(false);
+        this.botao_atualizar_item.setEnabled(false);
+        this.botao_remover_item.setEnabled(false);
+        this.botao_cadastrar_item.setEnabled(false);
+
+        retrieveData(CarregarDados.TUDO);
     }
 
-    public void retrieveData() {
+    public void retrieveData(CarregarDados opcao) {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                retrieveDataList();
+                retrieveDataList(opcao);
             }
         }).start();
     }
 
-    private void retrieveDataList() {
+    private void retrieveDataList(CarregarDados opcao) {
         try {
-            carregarGeneros();
-            carregarTipos();
-            carregarComplementos();
-            carregarItens();
+            if (opcao == CarregarDados.GENERO || opcao == CarregarDados.TUDO) {
+                carregarGeneros();
+            }
+            if (opcao == CarregarDados.TIPO || opcao == CarregarDados.TUDO) {
+                carregarTipos();
+            }
+            if (opcao == CarregarDados.COMPLEMENTO || opcao == CarregarDados.TUDO) {
+                carregarComplementos();
+            }
+            if (opcao == CarregarDados.ITEM || opcao == CarregarDados.TUDO) {
+                carregarItens();
+            }
+            if (opcao == CarregarDados.TUDO) {
+                this.botao_cadastrar_item.setEnabled(true);
+            }
         } catch (DAOException e) {
             JOptionPane.showMessageDialog(null, "Falha ao obter os dados, certifique-se de que você tem conexão com o sistema");
             super.dispose();
@@ -156,20 +190,52 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
         this.modeloTabelaComplementosExistentes.getDataVector().clear();
         this.tabela_complementos_existentes.updateUI();
         for (Complemento complemento : complementos) {
-            System.out.println(complemento.getPreco());
             this.modeloTabelaComplementosExistentes.addRow(new Complemento[]{complemento, complemento});
         }
     }
 
-    private void carregarItens() {
-
+    private void carregarItens() throws IOException, DAOException {
+        HttpURLConnection con = new HttpConnection().getConnection("gerenciador/listar-itens");
+        Session.get(con);
+        String resposta = new DataDAO(con).retrieveString();
+        ObjectMapper mapeador = new ObjectMapper();
+        List<Item> itens = mapeador.readValue(resposta, new TypeReference<List<Item>>() {
+        });
+        con.disconnect();
+        this.modeloTabelaItemExistentes.getDataVector().clear();
+        this.tabela_item.updateUI();
+        for (Item item : itens) {
+            this.modeloTabelaItemExistentes.addRow(new Item[]{item, item});
+        }
     }
 
-    private void adicionarImagem(ImagemParaMostrar imagemParaMostrar, JButton botao) {
-        PegarArquivo pegarArquivo = new PegarArquivo();
-        int opc = pegarArquivo.showOpenDialog(this);
+    private void setEdicaoItem(boolean estado) {
+        this.campo_texto_nome_item.setEnabled(estado);
+        this.campo_texto_preco_item.setEnabled(estado);
+        this.area_texto_descricao_item.setEnabled(estado);
+        this.caixa_opcoes_genero_item.setEnabled(estado);
+        this.botao_adicionar_complemento.setEnabled(estado);
+        this.botao_remover_complemento.setEnabled(estado);
+        this.botao_adicionar_tipo.setEnabled(estado);
+        this.botao_remover_tipo.setEnabled(estado);
+        this.tabela_complementos_existentes.setEnabled(estado);
+        this.tabela_tipos_existentes.setEnabled(estado);
+        this.botao_salvar_item.setEnabled(estado);
+        this.botao_adicionar_imagem1.setEnabled(estado);
+        this.botao_adicionar_imagem2.setEnabled(estado);
+        this.botao_adicionar_imagem3.setEnabled(estado);
+        this.botao_adicionar_imagem4.setEnabled(estado);
+        this.botao_adicionar_imagem5.setEnabled(estado);
+    }
+
+    private ImagemParaMostrar adicionarImagem(JButton botao) {
+        ImagemParaMostrar imagemParaMostrar = null;
+        if (this.pegarArquivo == null) {
+            this.pegarArquivo = new PegarArquivo();
+        }
+        int opc = this.pegarArquivo.showOpenDialog(this);
         if (opc == JFileChooser.APPROVE_OPTION) {
-            File arquivo = pegarArquivo.getSelectedFile();
+            File arquivo = this.pegarArquivo.getSelectedFile();
             ImageIcon tmpIcon = new ImageIcon(arquivo.getPath());
             if (tmpIcon != null) {
                 if (tmpIcon.getIconWidth() > 250) {
@@ -182,11 +248,12 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
                 botao.setIcon(imagemParaMostrar.getIcon());
             }
         }
+        return imagemParaMostrar;
     }
 
     private void salvarItens() {
         List<File> files = new ArrayList<>();
-        List<Foto> fotos = new ArrayList<>();
+        Set<Foto> fotos = new HashSet<>();
         if (imagemTipo1 != null) {
             files.add(new File(imagemTipo1.getCaminho()));
         }
@@ -202,6 +269,7 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
         if (imagemTipo5 != null) {
             files.add(new File(imagemTipo5.getCaminho()));
         }
+        System.out.println(files.size());
         if (files.isEmpty()) {
             JOptionPane.showMessageDialog(null, "É necessário inserir pelo menos uma imagem", "Atenção", JOptionPane.WARNING_MESSAGE);
             return;
@@ -235,12 +303,11 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
             item.setModificavel(true);
             item.setComplementos(this.complementosParaAdicionar);
         }
-        Mensagem mensagem = new Mensagem();
+        Mensagem mensagem;
         HttpURLConnection conexao = null;
         try {
             for (File file : files) {
                 conexao = new HttpConnection().getConnection("gerenciador/salvar-imagem");
-                mensagem = new Mensagem();
                 Session.get(conexao);
                 DataDAO dataDAO = new DataDAO(conexao);
                 dataDAO.sendMultiPartFile(file, null);
@@ -251,12 +318,13 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
                 fotos.add(new Foto(Integer.parseInt(mensagem.getDescricao()), null));
                 conexao.disconnect();
             }
-            conexao = new HttpConnection().getConnection("gerenciador/cadastrar-complemento");
-            mensagem = new Mensagem();
+            item.setFotos(fotos);
+            conexao = new HttpConnection().getConnection("gerenciador/cadastrar-item");
             Session.get(conexao);
             DataDAO dataDAO = new DataDAO(conexao);
             ObjectMapper mapeador = new ObjectMapper();
             String json = mapeador.writeValueAsString(item);
+            System.out.println(json);
             dataDAO.sendJSON(json);
             String resposta = dataDAO.retrieveString();
             mensagem = mapeador.readValue(resposta, new TypeReference<Mensagem>() {
@@ -286,18 +354,19 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jScrollPane1 = new javax.swing.JScrollPane();
+        painel_rolante_principal = new javax.swing.JScrollPane();
         jPanel1 = new javax.swing.JPanel();
-        jSplitPane1 = new javax.swing.JSplitPane();
+        painel_divisor_principal = new javax.swing.JSplitPane();
         jPanel2 = new javax.swing.JPanel();
         jPanel13 = new javax.swing.JPanel();
         jPanel3 = new javax.swing.JPanel();
-        jButton1 = new javax.swing.JButton();
-        jButton2 = new javax.swing.JButton();
+        botao_cadastrar_item = new javax.swing.JButton();
+        botao_atualizar_item = new javax.swing.JButton();
+        botao_remover_item = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
         tabela_item = new javax.swing.JTable();
-        jPanel4 = new javax.swing.JPanel();
-        jSplitPane2 = new javax.swing.JSplitPane();
+        painel_item = new javax.swing.JPanel();
+        painel_divisor_secundario = new javax.swing.JSplitPane();
         jPanel6 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
         campo_texto_nome_item = new javax.swing.JTextField();
@@ -314,7 +383,7 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
         tabela_tipos_existentes = new javax.swing.JTable();
         jPanel10 = new javax.swing.JPanel();
         botao_adicionar_tipo = new javax.swing.JButton();
-        botao_limpar_tipo = new javax.swing.JButton();
+        botao_remover_tipo = new javax.swing.JButton();
         jScrollPane9 = new javax.swing.JScrollPane();
         tabela_tipos_para_serem_adicionados = new javax.swing.JTable();
         botao_salvar_item = new javax.swing.JButton();
@@ -342,6 +411,8 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
+        painel_divisor_principal.setDividerLocation(250);
+
         jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Itens existntes"));
         jPanel2.setLayout(new java.awt.BorderLayout());
 
@@ -349,11 +420,24 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
 
         jPanel3.setLayout(new java.awt.BorderLayout());
 
-        jButton1.setText("Cadastrar item");
-        jPanel3.add(jButton1, java.awt.BorderLayout.CENTER);
+        botao_cadastrar_item.setText("Cadastrar item");
+        botao_cadastrar_item.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                botao_cadastrar_itemActionPerformed(evt);
+            }
+        });
+        jPanel3.add(botao_cadastrar_item, java.awt.BorderLayout.PAGE_END);
 
-        jButton2.setText("Atualizar item");
-        jPanel3.add(jButton2, java.awt.BorderLayout.PAGE_START);
+        botao_atualizar_item.setText("Atualizar item");
+        botao_atualizar_item.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                botao_atualizar_itemActionPerformed(evt);
+            }
+        });
+        jPanel3.add(botao_atualizar_item, java.awt.BorderLayout.PAGE_START);
+
+        botao_remover_item.setText("Remover item");
+        jPanel3.add(botao_remover_item, java.awt.BorderLayout.CENTER);
 
         jPanel13.add(jPanel3);
 
@@ -370,29 +454,34 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
+        tabela_item.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tabela_itemMouseClicked(evt);
+            }
+        });
         jScrollPane2.setViewportView(tabela_item);
 
         jPanel2.add(jScrollPane2, java.awt.BorderLayout.CENTER);
 
-        jSplitPane1.setLeftComponent(jPanel2);
+        painel_divisor_principal.setLeftComponent(jPanel2);
 
-        jPanel4.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Adicionar item", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION));
+        painel_item.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Cadastrar item", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION));
 
-        jSplitPane2.setDividerLocation(950);
+        painel_divisor_secundario.setDividerLocation(900);
 
         jLabel2.setText("Nome:");
 
-        campo_texto_nome_item.setFont(new java.awt.Font("Cantarell", 0, 18)); // NOI18N
+        campo_texto_nome_item.setFont(new java.awt.Font("Cantarell", 0, 14)); // NOI18N
 
         jLabel3.setText("Preço:");
 
-        campo_texto_preco_item.setFont(new java.awt.Font("Cantarell", 0, 18)); // NOI18N
+        campo_texto_preco_item.setFont(new java.awt.Font("Cantarell", 0, 14)); // NOI18N
 
         jLabel4.setText("Descrição:");
 
         area_texto_descricao_item.setColumns(20);
-        area_texto_descricao_item.setFont(new java.awt.Font("Cantarell", 0, 18)); // NOI18N
-        area_texto_descricao_item.setRows(4);
+        area_texto_descricao_item.setFont(new java.awt.Font("Cantarell", 0, 14)); // NOI18N
+        area_texto_descricao_item.setRows(3);
         jScrollPane3.setViewportView(area_texto_descricao_item);
 
         jLabel5.setText("Gênero:");
@@ -421,7 +510,7 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
         botao_adicionar_tipo.setText("Adicionar >>");
         botao_adicionar_tipo.setMaximumSize(new java.awt.Dimension(150, 30));
         botao_adicionar_tipo.setMinimumSize(new java.awt.Dimension(90, 30));
-        botao_adicionar_tipo.setPreferredSize(new java.awt.Dimension(150, 30));
+        botao_adicionar_tipo.setPreferredSize(new java.awt.Dimension(90, 30));
         botao_adicionar_tipo.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 botao_adicionar_tipoActionPerformed(evt);
@@ -429,16 +518,16 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
         });
         jPanel10.add(botao_adicionar_tipo);
 
-        botao_limpar_tipo.setText("<< Remover");
-        botao_limpar_tipo.setMaximumSize(new java.awt.Dimension(150, 30));
-        botao_limpar_tipo.setMinimumSize(new java.awt.Dimension(90, 30));
-        botao_limpar_tipo.setPreferredSize(new java.awt.Dimension(150, 30));
-        botao_limpar_tipo.addActionListener(new java.awt.event.ActionListener() {
+        botao_remover_tipo.setText("<< Remover");
+        botao_remover_tipo.setMaximumSize(new java.awt.Dimension(150, 30));
+        botao_remover_tipo.setMinimumSize(new java.awt.Dimension(90, 30));
+        botao_remover_tipo.setPreferredSize(new java.awt.Dimension(150, 30));
+        botao_remover_tipo.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                botao_limpar_tipoActionPerformed(evt);
+                botao_remover_tipoActionPerformed(evt);
             }
         });
-        jPanel10.add(botao_limpar_tipo);
+        jPanel10.add(botao_remover_tipo);
 
         jPanel9.add(jPanel10);
 
@@ -469,7 +558,7 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
         jPanel7Layout.setVerticalGroup(
             jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel7Layout.createSequentialGroup()
-                .addComponent(jPanel9, javax.swing.GroupLayout.DEFAULT_SIZE, 216, Short.MAX_VALUE)
+                .addComponent(jPanel9, javax.swing.GroupLayout.DEFAULT_SIZE, 150, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -481,6 +570,7 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
         });
 
         jPanel8.setBorder(javax.swing.BorderFactory.createTitledBorder("Complemento"));
+        jPanel8.setPreferredSize(new java.awt.Dimension(34, 184));
 
         jPanel11.setLayout(new javax.swing.BoxLayout(jPanel11, javax.swing.BoxLayout.LINE_AXIS));
 
@@ -504,6 +594,7 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
         botao_adicionar_complemento.setText("Adicionar >>");
         botao_adicionar_complemento.setMaximumSize(new java.awt.Dimension(150, 30));
         botao_adicionar_complemento.setMinimumSize(new java.awt.Dimension(90, 30));
+        botao_adicionar_complemento.setPreferredSize(new java.awt.Dimension(150, 30));
         botao_adicionar_complemento.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 botao_adicionar_complementoActionPerformed(evt);
@@ -551,7 +642,7 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
         jPanel8Layout.setVerticalGroup(
             jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel8Layout.createSequentialGroup()
-                .addComponent(jPanel11, javax.swing.GroupLayout.DEFAULT_SIZE, 216, Short.MAX_VALUE)
+                .addComponent(jPanel11, javax.swing.GroupLayout.DEFAULT_SIZE, 150, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -574,7 +665,7 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
                     .addGroup(jPanel6Layout.createSequentialGroup()
                         .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
-                        .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 450, Short.MAX_VALUE))
+                        .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
                     .addGroup(jPanel6Layout.createSequentialGroup()
                         .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel6Layout.createSequentialGroup()
@@ -583,7 +674,7 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
                                 .addComponent(campo_texto_preco_item, javax.swing.GroupLayout.PREFERRED_SIZE, 234, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addComponent(botao_salvar_item, javax.swing.GroupLayout.PREFERRED_SIZE, 200, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(0, 0, Short.MAX_VALUE))
-                    .addComponent(jPanel8, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jPanel8, javax.swing.GroupLayout.DEFAULT_SIZE, 876, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel6Layout.setVerticalGroup(
@@ -592,11 +683,11 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(campo_texto_nome_item, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(campo_texto_nome_item, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(campo_texto_preco_item, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(campo_texto_preco_item, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jScrollPane3)
@@ -604,22 +695,28 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(caixa_opcoes_genero_item, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(caixa_opcoes_genero_item, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(botao_salvar_item, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(51, Short.MAX_VALUE))
         );
 
-        jSplitPane2.setLeftComponent(jPanel6);
+        painel_divisor_secundario.setLeftComponent(jPanel6);
 
+        jPanel5.setMaximumSize(new java.awt.Dimension(100, 150));
+        jPanel5.setMinimumSize(new java.awt.Dimension(50, 150));
+        jPanel5.setPreferredSize(new java.awt.Dimension(100, 150));
         jPanel5.setLayout(new java.awt.GridLayout(5, 1));
 
         botao_adicionar_imagem1.setBackground(new java.awt.Color(255, 255, 255));
         botao_adicionar_imagem1.setText("Adicionar imagem");
+        botao_adicionar_imagem1.setMaximumSize(new java.awt.Dimension(100, 30));
+        botao_adicionar_imagem1.setMinimumSize(new java.awt.Dimension(100, 30));
+        botao_adicionar_imagem1.setPreferredSize(new java.awt.Dimension(100, 30));
         botao_adicionar_imagem1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 botao_adicionar_imagem1ActionPerformed(evt);
@@ -663,25 +760,25 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
         });
         jPanel5.add(botao_adicionar_imagem5);
 
-        jSplitPane2.setRightComponent(jPanel5);
+        painel_divisor_secundario.setRightComponent(jPanel5);
 
-        javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
-        jPanel4.setLayout(jPanel4Layout);
-        jPanel4Layout.setHorizontalGroup(
-            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel4Layout.createSequentialGroup()
+        javax.swing.GroupLayout painel_itemLayout = new javax.swing.GroupLayout(painel_item);
+        painel_item.setLayout(painel_itemLayout);
+        painel_itemLayout.setHorizontalGroup(
+            painel_itemLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(painel_itemLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jSplitPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 859, Short.MAX_VALUE)
+                .addComponent(painel_divisor_secundario)
                 .addContainerGap())
         );
-        jPanel4Layout.setVerticalGroup(
-            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel4Layout.createSequentialGroup()
+        painel_itemLayout.setVerticalGroup(
+            painel_itemLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(painel_itemLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jSplitPane2))
+                .addComponent(painel_divisor_secundario))
         );
 
-        jSplitPane1.setRightComponent(jPanel4);
+        painel_divisor_principal.setRightComponent(painel_item);
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -689,18 +786,18 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jSplitPane1)
+                .addComponent(painel_divisor_principal)
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jSplitPane1)
+                .addComponent(painel_divisor_principal)
                 .addContainerGap())
         );
 
-        jScrollPane1.setViewportView(jPanel1);
+        painel_rolante_principal.setViewportView(jPanel1);
 
         jMenu1.setText("Arquivo");
         jMenuBar1.add(jMenu1);
@@ -741,14 +838,14 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1622, Short.MAX_VALUE)
+                .addComponent(painel_rolante_principal)
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1)
+                .addComponent(painel_rolante_principal)
                 .addContainerGap())
         );
 
@@ -756,83 +853,121 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
-        TelaAdicionarComplemento telaAdicionarComplemento = new TelaAdicionarComplemento();
+        TelaAdicionarComplemento telaAdicionarComplemento = new TelaAdicionarComplemento(this);
         telaAdicionarComplemento.setVisible(true);
     }//GEN-LAST:event_jMenuItem1ActionPerformed
 
     private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
-        TelaAdicionarGenero telaAdicionarGenero = new TelaAdicionarGenero();
+        TelaAdicionarGenero telaAdicionarGenero = new TelaAdicionarGenero(this);
         telaAdicionarGenero.setVisible(true);
     }//GEN-LAST:event_jMenuItem2ActionPerformed
 
     private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
-        TelaAdicionarTipo telaAdicionarTipo = new TelaAdicionarTipo();
+        TelaAdicionarTipo telaAdicionarTipo = new TelaAdicionarTipo(this);
         telaAdicionarTipo.setVisible(true);
     }//GEN-LAST:event_jMenuItem3ActionPerformed
 
     private void botao_adicionar_tipoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_adicionar_tipoActionPerformed
-        while (this.tabela_tipos_existentes.getRowCount() > 0) {
+        while (this.tabela_tipos_existentes.getSelectedRowCount() > 0) {
             int linhaSelecionada = this.tabela_tipos_existentes.getSelectedRow();
             Tipo tipo = (Tipo) this.modeloTabelaTiposExistentes.getValueAt(linhaSelecionada, 0);
             this.modeloTabelaTiposExistentes.removeRow(linhaSelecionada);
             this.modeloTabelaTiposParaAdicionar.addRow(new Tipo[]{tipo});
             this.tiposParaSeremAdicionados.add(tipo);
         }
+        System.out.println("Tamanho da lista de tipos: " + tiposParaSeremAdicionados.size());
     }//GEN-LAST:event_botao_adicionar_tipoActionPerformed
 
     private void botao_adicionar_complementoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_adicionar_complementoActionPerformed
-        while (this.tabela_complementos_existentes.getRowCount() > 0) {
+        while (this.tabela_complementos_existentes.getSelectedRowCount() > 0) {
             int linhaSelecionada = this.tabela_complementos_existentes.getSelectedRow();
             Complemento complemento = (Complemento) this.modeloTabelaComplementosExistentes.getValueAt(linhaSelecionada, 0);
             this.modeloTabelaComplementosExistentes.removeRow(linhaSelecionada);
             this.modeloTabelaComplementosParaAdicionar.addRow(new Complemento[]{complemento, complemento});
             this.complementosParaAdicionar.add(complemento);
         }
+        System.out.println("Tamanho da lista de complementos: " + complementosParaAdicionar.size());
     }//GEN-LAST:event_botao_adicionar_complementoActionPerformed
 
     private void botao_adicionar_imagem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_adicionar_imagem1ActionPerformed
-        this.adicionarImagem(this.imagemTipo1, this.botao_adicionar_imagem1);
+        this.imagemTipo1 = this.adicionarImagem(this.botao_adicionar_imagem1);
     }//GEN-LAST:event_botao_adicionar_imagem1ActionPerformed
 
     private void botao_adicionar_imagem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_adicionar_imagem2ActionPerformed
-        this.adicionarImagem(this.imagemTipo2, this.botao_adicionar_imagem2);
+        this.imagemTipo2 = this.adicionarImagem(this.botao_adicionar_imagem2);
     }//GEN-LAST:event_botao_adicionar_imagem2ActionPerformed
 
     private void botao_adicionar_imagem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_adicionar_imagem3ActionPerformed
-        this.adicionarImagem(this.imagemTipo3, this.botao_adicionar_imagem3);
+        this.imagemTipo3 = this.adicionarImagem(this.botao_adicionar_imagem3);
     }//GEN-LAST:event_botao_adicionar_imagem3ActionPerformed
 
     private void botao_adicionar_imagem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_adicionar_imagem4ActionPerformed
-        this.adicionarImagem(this.imagemTipo4, this.botao_adicionar_imagem4);
+        this.imagemTipo4 = this.adicionarImagem(this.botao_adicionar_imagem4);
     }//GEN-LAST:event_botao_adicionar_imagem4ActionPerformed
 
     private void botao_adicionar_imagem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_adicionar_imagem5ActionPerformed
-        this.adicionarImagem(this.imagemTipo5, this.botao_adicionar_imagem5);
+        this.imagemTipo5 = this.adicionarImagem(this.botao_adicionar_imagem5);
     }//GEN-LAST:event_botao_adicionar_imagem5ActionPerformed
 
     private void botao_salvar_itemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_salvar_itemActionPerformed
-
+        this.salvarItens();
     }//GEN-LAST:event_botao_salvar_itemActionPerformed
 
-    private void botao_limpar_tipoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_limpar_tipoActionPerformed
-        while (this.tabela_tipos_para_serem_adicionados.getRowCount() > 0) {
+    private void botao_remover_tipoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_remover_tipoActionPerformed
+        while (this.tabela_tipos_para_serem_adicionados.getSelectedRowCount() > 0) {
             int linhaSelecionada = this.tabela_tipos_para_serem_adicionados.getSelectedRow();
             Tipo tipo = (Tipo) this.modeloTabelaTiposParaAdicionar.getValueAt(linhaSelecionada, 0);
             this.modeloTabelaTiposParaAdicionar.removeRow(linhaSelecionada);
             this.modeloTabelaTiposExistentes.addRow(new Tipo[]{tipo});
             this.tiposParaSeremAdicionados.remove(tipo);
         }
-    }//GEN-LAST:event_botao_limpar_tipoActionPerformed
+        System.out.println("Tamanho da lista de tipos: " + tiposParaSeremAdicionados.size());
+    }//GEN-LAST:event_botao_remover_tipoActionPerformed
 
     private void botao_remover_complementoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_remover_complementoActionPerformed
-        while (this.tabela_complementos_para_serem_adicionados.getRowCount() > 0) {
+        while (this.tabela_complementos_para_serem_adicionados.getSelectedRowCount() > 0) {
             int linhaSelecionada = this.tabela_complementos_para_serem_adicionados.getSelectedRow();
             Complemento complemento = (Complemento) this.modeloTabelaComplementosParaAdicionar.getValueAt(linhaSelecionada, 0);
             this.modeloTabelaComplementosParaAdicionar.removeRow(linhaSelecionada);
             this.modeloTabelaComplementosExistentes.addRow(new Complemento[]{complemento, complemento});
             this.complementosParaAdicionar.remove(complemento);
         }
+        System.out.println("Tamanho da lista de complementos: " + complementosParaAdicionar.size());
     }//GEN-LAST:event_botao_remover_complementoActionPerformed
+
+    private void tabela_itemMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tabela_itemMouseClicked
+        if (this.tabela_item.getSelectedRowCount() > 0) {
+            this.botao_remover_item.setEnabled(true);
+            this.botao_atualizar_item.setEnabled(true);
+        }
+    }//GEN-LAST:event_tabela_itemMouseClicked
+
+    private void botao_cadastrar_itemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_cadastrar_itemActionPerformed
+        ((TitledBorder) this.painel_item.getBorder()).setTitle("Cadastrar item");
+        super.repaint();
+        this.tabela_item.clearSelection();
+        this.botao_atualizar_item.setEnabled(false);
+        this.botao_remover_item.setEnabled(false);
+        this.setEdicaoItem(true);
+    }//GEN-LAST:event_botao_cadastrar_itemActionPerformed
+
+    private void botao_atualizar_itemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botao_atualizar_itemActionPerformed
+        if (this.tabela_item.getSelectedRowCount() > 0) {
+            if (this.tabela_item.getSelectedRowCount() < 2) {
+                ((TitledBorder) this.painel_item.getBorder()).setTitle("Atualizar item");
+                this.setEdicaoItem(true);
+                super.repaint();
+                Item item = (Item) this.modeloTabelaItemExistentes.getValueAt(this.tabela_item.getSelectedRow(), 0);
+                this.campo_texto_nome_item.setText(item.getNome());
+                this.campo_texto_preco_item.setText(String.valueOf(item.getPreco()));
+                this.area_texto_descricao_item.setText(item.getDescricao());
+                this.caixa_opcoes_genero_item.setSelectedItem(item.getGenero());
+                for (Tipo tipo : item.getTipos()) {
+                    
+                }
+            }
+        }
+    }//GEN-LAST:event_botao_atualizar_itemActionPerformed
 
     /**
      * @param args the command line arguments
@@ -921,7 +1056,11 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
 
         @Override
         public Object getValueAt(int i, int i1) {
-            return super.getValueAt(i, i1);
+            if (i1 == 0) {
+                return ((Item) super.getValueAt(i, i1));
+            } else {
+                return ((Item) super.getValueAt(i, i1)).getPreco();
+            }
         }
 
         @Override
@@ -944,14 +1083,15 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
     private javax.swing.JButton botao_adicionar_imagem4;
     private javax.swing.JButton botao_adicionar_imagem5;
     private javax.swing.JButton botao_adicionar_tipo;
-    private javax.swing.JButton botao_limpar_tipo;
+    private javax.swing.JButton botao_atualizar_item;
+    private javax.swing.JButton botao_cadastrar_item;
     private javax.swing.JButton botao_remover_complemento;
+    private javax.swing.JButton botao_remover_item;
+    private javax.swing.JButton botao_remover_tipo;
     private javax.swing.JButton botao_salvar_item;
     private javax.swing.JComboBox<Genero> caixa_opcoes_genero_item;
     private javax.swing.JTextField campo_texto_nome_item;
     private javax.swing.JTextField campo_texto_preco_item;
-    private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -969,21 +1109,21 @@ public class TelaAdicionarItem extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel13;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
-    private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel7;
     private javax.swing.JPanel jPanel8;
     private javax.swing.JPanel jPanel9;
-    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane10;
     private javax.swing.JScrollPane jScrollPane11;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JScrollPane jScrollPane9;
-    private javax.swing.JSplitPane jSplitPane1;
-    private javax.swing.JSplitPane jSplitPane2;
+    private javax.swing.JSplitPane painel_divisor_principal;
+    private javax.swing.JSplitPane painel_divisor_secundario;
+    private javax.swing.JPanel painel_item;
+    private javax.swing.JScrollPane painel_rolante_principal;
     private javax.swing.JTable tabela_complementos_existentes;
     private javax.swing.JTable tabela_complementos_para_serem_adicionados;
     private javax.swing.JTable tabela_item;

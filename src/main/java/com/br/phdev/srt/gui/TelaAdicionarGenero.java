@@ -31,6 +31,8 @@ import javax.swing.table.DefaultTableModel;
  * @author Paulo Henrique Gonçalves Bacelar
  */
 public class TelaAdicionarGenero extends javax.swing.JFrame {    
+    
+    private TelaAdicionarItem telaAdicionarItem;
 
     private TableModelGenero modeloTabelaGenerosParaAdicionar;
     private Set<Genero> generosParaSeremAdicionados;
@@ -41,8 +43,9 @@ public class TelaAdicionarGenero extends javax.swing.JFrame {
     /**
      * Creates new form FrameAddSpeciality
      */
-    public TelaAdicionarGenero() {
+    public TelaAdicionarGenero(TelaAdicionarItem telaAdicionarItem) {
         super("Adicionar gêneros");
+        this.telaAdicionarItem = telaAdicionarItem;
         initComponents();
         setAllComponentsEnable(false);        
         this.generosParaSeremAdicionados = new HashSet<>();
@@ -197,7 +200,9 @@ public class TelaAdicionarGenero extends javax.swing.JFrame {
     }
 
     @Override
-    public void dispose() {                
+    public void dispose() {     
+        this.telaAdicionarItem.retrieveData(TelaAdicionarItem.CarregarDados.GENERO);
+        this.telaAdicionarItem.setVisible(true);
         super.dispose();        
     }
 
@@ -501,7 +506,7 @@ public class TelaAdicionarGenero extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new TelaAdicionarGenero().setVisible(true);
+                new TelaAdicionarGenero(null).setVisible(true);
             }
         });
     }

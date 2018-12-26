@@ -8,8 +8,13 @@ package com.br.phdev.srt.gui;
 import com.br.phdev.srt.dao.DataDAO;
 import com.br.phdev.srt.exception.DAOException;
 import com.br.phdev.srt.http.HttpConnection;
+import com.br.phdev.srt.models.Usuario;
+import com.br.phdev.srt.utils.Mensagem;
 import com.br.phdev.srt.utils.Session;
 import com.br.phdev.srt.utils.UrlAttribute;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.util.ArrayList;
@@ -123,30 +128,35 @@ public class TelaLogin extends javax.swing.JFrame {
     private void button_loginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button_loginActionPerformed
         String username = textField_userName.getText();
         String userPassword = new String(textField_userPassword.getPassword());
-        
-        List<UrlAttribute> urlAttributeList = new ArrayList<>();
-        urlAttributeList.add(new UrlAttribute("usuario", username));
-        urlAttributeList.add(new UrlAttribute("senha", userPassword));
-        
-        HttpURLConnection con = new HttpConnection().getConnection("Autenticar");        
-        String msg = "";
+
+        Usuario usuario = new Usuario();
+        usuario.setNomeUsuario(username);
+        usuario.setSenhaUsuario(userPassword);
+
+        HttpURLConnection con = new HttpConnection().getConnection("cliente/autenticar");
         try {
             Session.newSession(con);
             DataDAO dataDAO = new DataDAO(con);
-            dataDAO.sendAttributes(urlAttributeList);
-            msg = dataDAO.retrieveString();
+            ObjectMapper mapeador = new ObjectMapper();
+            String json = mapeador.writeValueAsString(usuario);
+            dataDAO.sendJSON(json);
+            String msg = dataDAO.retrieveString();
             Session.validate(con);
-            if (msg.equals("sucesso")) {                
-                new TelaPrincipal().setVisible(true);
+            Mensagem mensagem = mapeador.readValue(msg, new TypeReference<Mensagem>() {
+            });
+            if (mensagem.getCodigo() == 0) {
+                new TelaAdicionarItem().setVisible(true);
                 dispose();
             }
         } catch (DAOException e) {
             e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         } finally {
             con.disconnect();
         }
-        
-        
+
+
     }//GEN-LAST:event_button_loginActionPerformed
 
     /**

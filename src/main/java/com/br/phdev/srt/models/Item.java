@@ -114,7 +114,7 @@ public class Item {
 
     @Override
     public String toString() {
-        return "Prato{" + "id=" + id + ", nome=" + nome + ", descricao=" + descricao + ", preco=" + preco + ", genero=" + genero + ", tipos=" + tipos + ", modificavel=" + modificavel + ", complementos=" + complementos + ", fotos=" + fotos + '}';
-    }        
+        return this.nome;
+    }
     
 }

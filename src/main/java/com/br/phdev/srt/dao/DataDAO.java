@@ -26,7 +26,7 @@ import java.util.List;
  * @author Paulo Henrique Gonçalves Bacelar <henrique.phgb@gmail.com>
  */
 public class DataDAO {
-    
+
     private final HttpURLConnection connection;
 
     public DataDAO(HttpURLConnection connection) {
@@ -60,18 +60,18 @@ public class DataDAO {
         }
         return bytes;
     }
-    
+
     public void sendMultiPartFile(File arquivo, List<UrlAttribute> urlAttributeList) throws DAOException {
         String boundary = "SwA " + Long.toString(System.currentTimeMillis()) + " SwA";
         String delimiter = "--";
-        OutputStream os = null;        
+        OutputStream os = null;
         String paramName = "param1";
         String value = "value1";
         try {
             byte[] bytes = getBytesFromFile(arquivo);
 
             this.connection.setDoOutput(true);
-            this.connection.setDoInput(true);           
+            this.connection.setDoInput(true);
             this.connection.setRequestProperty("Connection", "Keep-Alive");
             this.connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
             this.connection.connect();
@@ -91,22 +91,24 @@ public class DataDAO {
             os.write("\r\n".getBytes());
             os.write(bytes);
             os.write("\r\n".getBytes());
-            
-            for (UrlAttribute urlAttribute : urlAttributeList) {
-                os.write((delimiter + boundary + "\r\n").getBytes());
-                os.write("Content-Type: text/plain\r\n".getBytes());
-                os.write(("Content-Disposition: form-data; name=\"" + urlAttribute.getName() + "\"\r\n").getBytes());
-                os.write(("\r\n" + urlAttribute.getValue() + "\r\n").getBytes());
+
+            if (urlAttributeList != null) {
+                for (UrlAttribute urlAttribute : urlAttributeList) {
+                    os.write((delimiter + boundary + "\r\n").getBytes());
+                    os.write("Content-Type: text/plain\r\n".getBytes());
+                    os.write(("Content-Disposition: form-data; name=\"" + urlAttribute.getName() + "\"\r\n").getBytes());
+                    os.write(("\r\n" + urlAttribute.getValue() + "\r\n").getBytes());
+                }
             }
 
             os.write((delimiter + boundary + delimiter + "\r\n").getBytes());
-            os.close();            
+            os.close();
         } catch (IOException e) {
             throw new DAOException("Falha ao enviar o arquivo", e);
-        }        
+        }
     }
 
-    public void sendAttributes(List<UrlAttribute> urlAttributeList) throws DAOException {        
+    public void sendAttributes(List<UrlAttribute> urlAttributeList) throws DAOException {
         if (!this.connection.getDoOutput()) {
             this.connection.setDoOutput(true);
         }
@@ -127,7 +129,7 @@ public class DataDAO {
                 bfw.write(parameters.toString());
                 bfw.flush();
                 bfw.close();
-                os.close();                
+                os.close();
             } catch (IOException e) {
                 throw new DAOException("Falha ao enviar os dados", e);
             } finally {
@@ -142,37 +144,37 @@ public class DataDAO {
                     e.printStackTrace();
                 }
             }
-        }        
+        }
     }
-    
+
     public void sendJSON(String json) throws DAOException {
         if (!this.connection.getDoOutput()) {
             this.connection.setDoOutput(true);
         }
         OutputStream os = null;
-            BufferedWriter bfw = null;
+        BufferedWriter bfw = null;
+        try {
+            this.connection.setRequestProperty("Content-type", "application/json");
+            os = this.connection.getOutputStream();
+            bfw = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+            bfw.write(json);
+            bfw.flush();
+            bfw.close();
+            os.close();
+        } catch (IOException e) {
+            throw new DAOException("Falha ao enviar os dados", e);
+        } finally {
             try {
-                this.connection.setRequestProperty("Content-type", "application/json");
-                os = this.connection.getOutputStream();
-                bfw = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));                                                
-                bfw.write(json);
-                bfw.flush();
-                bfw.close();
-                os.close();                
-            } catch (IOException e) {
-                throw new DAOException("Falha ao enviar os dados", e);
-            } finally {
-                try {
-                    if (os != null) {
-                        os.close();
-                    }
-                    if (bfw != null) {
-                        bfw.close();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if (os != null) {
+                    os.close();
                 }
+                if (bfw != null) {
+                    bfw.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+        }
     }
 
     public String retrieveString() throws DAOException {
@@ -234,5 +236,5 @@ public class DataDAO {
             return -1;
         }
     }
-    
+
 }
